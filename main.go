@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -12,6 +14,8 @@ import (
 	"gorm.io/gorm"
 )
 
+//enum area
+
 type ItemStatus int
 
 const (
@@ -20,12 +24,51 @@ const (
 	ItemStatusDeleted
 )
 
+var itemStatusStringList = [3]string{"doing", "done", "deleted"}
+
+func (item ItemStatus) String() string {
+	return fmt.Sprintf(itemStatusStringList[item])
+}
+
+func parseStr2ItemStatus(s string) (ItemStatus, error) {
+	for i := range itemStatusStringList {
+		if itemStatusStringList[i] == s {
+			return ItemStatus(i), nil
+		}
+	}
+	return ItemStatus(0), errors.New(fmt.Sprintf("Invalid status string"))
+}
+
+func (item *ItemStatus) Scan(value interface{}) error {
+	bytes, ok := value.([]byte)
+
+	if !ok {
+		return errors.New(fmt.Sprintf("There is an error at %s", value))
+	}
+
+	strValue := string(bytes)
+	v, error := parseStr2ItemStatus(strValue)
+
+	if error != nil {
+		return errors.New(fmt.Sprintf("There is an error at %s", value))
+	}
+	*item = v
+
+	return nil
+}
+
+func (item *ItemStatus) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("\"%s\"", item.String())), nil
+}
+
+//end enum area
+
 type ToDoItem struct {
-	Id        int        `json:"id" gorm:"column:id;"`
-	Title     string     `json:"title" gorm:"column:title;"`
-	Status    string     `json:"status" gorm:"column:status;"`
-	CreatedAt *time.Time `json:"created_at" gorm:"column:created_at;"`
-	UpdatedAt *time.Time `json:"updated_at" gorm:"column:updated_at;"`
+	Id        int         `json:"id" gorm:"column:id;"`
+	Title     string      `json:"title" gorm:"column:title;"`
+	Status    *ItemStatus `json:"status" gorm:"column:status;"`
+	CreatedAt *time.Time  `json:"created_at" gorm:"column:created_at;"`
+	UpdatedAt *time.Time  `json:"updated_at" gorm:"column:updated_at;"`
 }
 
 func (ToDoItem) TableName() string { return "todo_items" }

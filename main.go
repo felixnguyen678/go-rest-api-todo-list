@@ -1,12 +1,14 @@
 package main
 
 import (
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -57,8 +59,32 @@ func (item *ItemStatus) Scan(value interface{}) error {
 	return nil
 }
 
+func (item *ItemStatus) Value() (driver.Value, error) {
+	if item == nil {
+		return nil, nil
+	}
+
+	return item.String(), nil
+}
+
 func (item *ItemStatus) MarshalJSON() ([]byte, error) {
+	if item == nil {
+		return nil, nil
+	}
 	return []byte(fmt.Sprintf("\"%s\"", item.String())), nil
+}
+
+func (item *ItemStatus) UnMarshalJSON(data []byte) error {
+	str := strings.ReplaceAll(string(data), "\"", "")
+	itemValue, err := parseStr2ItemStatus(str)
+
+	if err != nil {
+		return err
+	}
+
+	*item = itemValue
+
+	return nil
 }
 
 //end enum area

@@ -4,16 +4,15 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"go-rest-api-todo-list/common"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"time"
-
-	"github.com/gin-gonic/gin"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
 )
 
 //enum area
@@ -90,11 +89,9 @@ func (item *ItemStatus) UnMarshalJSON(data []byte) error {
 //end enum area
 
 type ToDoItem struct {
-	Id        int         `json:"id" gorm:"column:id;"`
-	Title     string      `json:"title" gorm:"column:title;"`
-	Status    *ItemStatus `json:"status" gorm:"column:status;"`
-	CreatedAt *time.Time  `json:"created_at" gorm:"column:created_at;"`
-	UpdatedAt *time.Time  `json:"updated_at" gorm:"column:updated_at;"`
+	common.SQLModel
+	Title  string      `json:"title" gorm:"column:title;"`
+	Status *ItemStatus `json:"status" gorm:"column:status;"`
 }
 
 func (ToDoItem) TableName() string { return "todo_items" }
@@ -163,7 +160,7 @@ func createItem(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"data": dataItem.Id})
+		c.JSON(http.StatusOK, common.SimpleSuccessResponse(dataItem.Id))
 	}
 }
 
@@ -183,32 +180,21 @@ func readItemById(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"data": dataItem})
+		c.JSON(http.StatusOK, common.SimpleSuccessResponse(dataItem))
 	}
 }
 
 func getListOfItems(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		type DataPaging struct {
-			Page  int   `json:"page" form:"page"`
-			Limit int   `json:"limit" form:"limit"`
-			Total int64 `json:"total" form:"-"`
-		}
 
-		var paging DataPaging
+		var paging common.Paging
 
 		if err := c.ShouldBind(&paging); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		if paging.Page <= 0 {
-			paging.Page = 1
-		}
-
-		if paging.Limit <= 0 {
-			paging.Limit = 10
-		}
+		paging.Process()
 
 		offset := (paging.Page - 1) * paging.Limit
 
@@ -223,7 +209,9 @@ func getListOfItems(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"data": result})
+		c.JSON(http.StatusOK, common.NewSuccessResponse(
+			result, paging, nil,
+		))
 	}
 }
 
@@ -248,7 +236,7 @@ func editItemById(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"data": true})
+		c.JSON(http.StatusOK, common.SimpleSuccessResponse(true))
 	}
 }
 
@@ -268,6 +256,6 @@ func deleteItemById(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"data": true})
+		c.JSON(http.StatusOK, common.SimpleSuccessResponse(true))
 	}
 }

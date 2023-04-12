@@ -8,24 +8,32 @@ import (
 	"go-rest-api-todo-list/module/item/storage"
 	"gorm.io/gorm"
 	"net/http"
+	"strconv"
 )
 
-func CreateItem(db *gorm.DB) gin.HandlerFunc {
+func GetItemById(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var dataItem model.ToDoItemCreation
 
-		if err := c.ShouldBind(&dataItem); err != nil {
+		id, err := strconv.Atoi(c.Param("id"))
+
+		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if err := db.Where("id = ?", id).First(&dataItem).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
 
 		store := storage.NewMySQLStorage(db)
 		biz := business.NewCreateToDoItemBiz(store)
 
-		if error := biz.CreateNewItem(c.Request.Context(), &dataItem); error != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": error.Error()})
+		if err := biz.CreateNewItem(c.Request.Context(), &dataItem); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		}
 
-		c.JSON(http.StatusOK, common.SimpleSuccessResponse(dataItem.Id))
+		c.JSON(http.StatusOK, common.SimpleSuccessResponse(dataItem))
 	}
 }

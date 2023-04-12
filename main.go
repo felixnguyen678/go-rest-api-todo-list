@@ -27,11 +27,11 @@ func main() {
 
 	v1 := router.Group("/v1")
 	{
-		v1.POST("/items", gin_item.CreateItem(db))     // create item
-		v1.GET("/items", getListOfItems(db))           // list items
-		v1.GET("/items/:id", gin_item.GetItemById(db)) // get an item by ID
-		v1.PUT("/items/:id", editItemById(db))         // edit an item by ID
-		v1.DELETE("/items/:id", deleteItemById(db))    // delete an item by ID
+		v1.POST("/items", gin_item.CreateItem(db))        // create item
+		v1.GET("/items", getListOfItems(db))              // list items
+		v1.GET("/items/:id", gin_item.GetItemById(db))    // get an item by ID
+		v1.PUT("/items/:id", gin_item.UpdateItemById(db)) // edit an item by ID
+		v1.DELETE("/items/:id", deleteItemById(db))       // delete an item by ID
 	}
 
 	router.Run()
@@ -65,31 +65,6 @@ func getListOfItems(db *gorm.DB) gin.HandlerFunc {
 		c.JSON(http.StatusOK, common.NewSuccessResponse(
 			result, paging, nil,
 		))
-	}
-}
-
-func editItemById(db *gorm.DB) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		id, err := strconv.Atoi(c.Param("id"))
-
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		var dataItem model.ToDoItemUpdate
-
-		if err := c.ShouldBind(&dataItem); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		if err := db.Where("id = ?", id).Updates(&dataItem).Error; err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, common.SimpleSuccessResponse(true))
 	}
 }
 

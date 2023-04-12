@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go-rest-api-todo-list/common"
 	"go-rest-api-todo-list/module/item/model"
+	gin_item "go-rest-api-todo-list/module/item/transport/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
@@ -26,7 +27,7 @@ func main() {
 
 	v1 := router.Group("/v1")
 	{
-		v1.POST("/items", createItem(db))           // create item
+		v1.POST("/items", gin_item.CreateItem(db))  // create item
 		v1.GET("/items", getListOfItems(db))        // list items
 		v1.GET("/items/:id", readItemById(db))      // get an item by ID
 		v1.PUT("/items/:id", editItemById(db))      // edit an item by ID
@@ -34,36 +35,6 @@ func main() {
 	}
 
 	router.Run()
-}
-
-func createItem(db *gorm.DB) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var dataItem model.ToDoItemCreation
-
-		if err := c.ShouldBind(&dataItem); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		//// preprocess title - trim all spaces
-		//dataItem.Title = strings.TrimSpace(dataItem.Title)
-		//
-		//if dataItem.Title == "" {
-		//	c.JSON(http.StatusBadRequest, gin.H{"error": "title cannot be blank"})
-		//	return
-		//}
-		//
-		//// do not allow "finished" status when creating a new task
-		//dataItem.Status = "Doing" // set to default
-		//
-
-		if err := db.Create(&dataItem).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, common.SimpleSuccessResponse(dataItem.Id))
-	}
 }
 
 func readItemById(db *gorm.DB) gin.HandlerFunc {

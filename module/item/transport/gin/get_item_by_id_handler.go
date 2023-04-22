@@ -25,8 +25,10 @@ func GetItemById(db *gorm.DB) gin.HandlerFunc {
 
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		}
 
 		c.JSON(http.StatusOK, common.SimpleSuccessResponse(dataItem))
+		return
 	}
 }

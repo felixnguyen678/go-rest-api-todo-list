@@ -24,8 +24,10 @@ func CreateItem(db *gorm.DB) gin.HandlerFunc {
 
 		if error := biz.CreateNewItem(c.Request.Context(), &dataItem); error != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": error.Error()})
+			return
 		}
 
 		c.JSON(http.StatusOK, common.SimpleSuccessResponse(dataItem.Id))
+		return
 	}
 }

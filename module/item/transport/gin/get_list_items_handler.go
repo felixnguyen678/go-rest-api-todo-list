@@ -33,5 +33,6 @@ func GetListOfItems(db *gorm.DB) gin.HandlerFunc {
 		c.JSON(http.StatusOK, common.NewSuccessResponse(
 			result, paging, nil,
 		))
+		return
 	}
 }

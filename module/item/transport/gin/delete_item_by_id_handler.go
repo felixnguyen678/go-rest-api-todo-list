@@ -30,5 +30,6 @@ func DeleteItemById(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, common.SimpleSuccessResponse(true))
+		return
 	}
 }

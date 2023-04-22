@@ -9,9 +9,15 @@ import (
 func (s *mysqlStorage) GetItem(ctx context.Context, condition map[string]interface{}) (*model.ToDoItem, error) {
 	var data model.ToDoItem
 
-	if err := s.db.Where(condition).First(&data).Error; err != nil {
-		return nil, model.ErrItemNotFound
+	if err := s.db.Where("abc = 2").First(&data).Error; err != nil {
+		//if err == gorm.ErrRecordNotFound {
+		//	return nil, common.RecordNotFound
+		//}
+		return nil, err
+		return nil, nil
+		return nil, common.ErrDB(err)
 	}
+
 	return &data, nil
 }
 
